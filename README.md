@@ -93,5 +93,6 @@ Web dashboard via Firebase enables remote alerts and monitoring.
 ## Firebase Configuration
 
 ```cpp
-#define FIREBASE_HOST "geysersystem-default-rtdb.asia-southeast1.firebasedatabase.app"
-#define FIREBASE_AUTH "7JmWPiU1mXe0HaHcLDLsXWhzFafgsr9yBdbi0d9J"
+#define FIREBASE_HOST "YOUR_FIREBASE_HOST_URL"
+#define FIREBASE_AUTH "YOUR_FIREBASE_AUTH_TOKEN"
+
