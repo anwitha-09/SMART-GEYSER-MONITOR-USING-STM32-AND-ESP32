@@ -1,0 +1,440 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STM32 Sensor Monitoring System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .connection-status {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
+        .sensor-card {
+            text-align: center;
+        }
+
+        .sensor-value {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 15px 0;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .temperature {
+            color: #ff6b6b;
+        }
+
+        .water-level {
+            color: #4ecdc4;
+        }
+
+        .threshold {
+            color: #45b7d1;
+        }
+
+        .sensor-label {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .sensor-unit {
+            font-size: 1.5rem;
+            color: #888;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-online {
+            background-color: #4CAF50;
+        }
+
+        .status-offline {
+            background-color: #f44336;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .project-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .info-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .info-card p, .info-card li {
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .team-members {
+            list-style: none;
+        }
+
+        .team-members li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .team-members li:last-child {
+            border-bottom: none;
+        }
+
+        .last-update {
+            text-align: center;
+            color: rgba(255,255,255,0.8);
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .alert-normal {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #00b894;
+        }
+
+        .water-present {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #00b894;
+        }
+
+        .water-absent {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .water-status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .sensor-value {
+                font-size: 2.5rem;
+            }
+        }
+
+        /* Firebase connection animation */
+        .firebase-connected {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            animation: slideIn 0.5s forwards;
+            display: none;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌡️ STM32 Sensor Monitoring System</h1>
+            <p>Real-time Temperature & Water Level Monitoring</p>
+        </div>
+
+        <div class="connection-status">
+            <span id="connection-status">Connecting to Firebase...</span>
+            <span id="status-indicator" class="status-indicator status-offline"></span>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card sensor-card">
+                <div class="sensor-label">Temperature</div>
+                <div class="sensor-value temperature" id="temperature">--</div>
+                <div class="sensor-unit">°C</div>
+                <div id="temp-status" class="alert alert-normal">Checking...</div>
+            </div>
+
+            <div class="card sensor-card">
+                <div class="sensor-label">Water Level</div>
+                <div class="sensor-value water-level" id="water-level">--</div>
+                <div class="sensor-unit">Status</div>
+                <div id="water-status" class="water-status">Checking...</div>
+            </div>
+
+            <div class="card sensor-card">
+                <div class="sensor-label">Threshold</div>
+                <div class="sensor-value threshold" id="threshold">--</div>
+                <div class="sensor-unit">°C</div>
+                <div id="threshold-status" class="alert">Static Value</div>
+            </div>
+        </div>
+
+        <div class="project-info">
+            <div class="card info-card">
+                <h3>👥 Team Information</h3>
+                <ul class="team-members">
+                    <li><strong>Anwitha Vishwanath:</strong> 1RV23ET010</li>
+                    <li><strong>Chinmay Sharma:</strong> 1RV23ET016</li>
+                    <li><strong>Harshit Saroha:</strong> 1RV23ET019 </li>
+                    <li><strong>Nikhilesh Rao:</strong> 1RV23ET024</li>
+                </ul>
+            </div>
+
+            <div class="card info-card">
+                <h3>🔥 Firebase Integration</h3>
+                <p>This dashboard connects to Firebase Realtime Database for live sensor data:</p>
+                <br>
+                <p>• Real-time data synchronization</p>
+                <p>• No server required - direct cloud connection</p>
+                <p>• Secure authentication</p>
+                <p>• Historical data storage capabilities</p>
+                <p>• Automatic offline handling</p>
+            </div>
+        </div>
+
+        <div class="last-update">
+            Last Updated: <span id="last-update">Never</span>
+        </div>
+    </div>
+
+    <div id="firebase-connected" class="firebase-connected">
+        🔥 Connected to Firebase
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+    <script>
+       // Your web app's Firebase configuration
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.REGION.firebasedatabase.app",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
+
+// Initialize Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+let isOnline = false;
+
+        // Show connection notification
+        function showFirebaseConnected() {
+            const notification = document.getElementById('firebase-connected');
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        // Update connection status
+        function setConnectionStatus(online) {
+            const statusText = document.getElementById('connection-status');
+            const statusIndicator = document.getElementById('status-indicator');
+            
+            if (online !== isOnline) {
+                isOnline = online;
+                if (online) {
+                    statusText.textContent = 'Connected to Firebase - Live Data';
+                    statusIndicator.className = 'status-indicator status-online';
+                    showFirebaseConnected();
+                } else {
+                    statusText.textContent = 'Disconnected from Firebase';
+                    statusIndicator.className = 'status-indicator status-offline';
+                }
+            }
+        }
+
+        // Update display with sensor data
+        function updateDisplay(data) {
+            if (data.temperature !== undefined) {
+                document.getElementById('temperature').textContent = data.temperature.toFixed(1);
+                
+                // Update temperature status
+                const tempStatus = document.getElementById('temp-status');
+                if (data.temperature > data.threshold) {
+                    tempStatus.textContent = '⚠️ Temperature Above Threshold!';
+                    tempStatus.className = 'alert alert-warning';
+                } else {
+                    tempStatus.textContent = '✅ Temperature Normal';
+                    tempStatus.className = 'alert alert-normal';
+                }
+            }
+
+            if (data.water_level !== undefined) {
+                const waterLevel = data.water_level;
+                document.getElementById('water-level').textContent = waterLevel === 0 ? "Present" : "Absent";
+                
+                // Update water status
+                const waterStatus = document.getElementById('water-status');
+                if (waterLevel === 0) {
+                    waterStatus.textContent = '💧 Water Detected';
+                    waterStatus.className = 'water-status water-present';
+                } else {
+                    waterStatus.textContent = '⚠️ No Water Detected';
+                    waterStatus.className = 'water-status water-absent';
+                }
+            }
+
+            if (data.threshold !== undefined) {
+                document.getElementById('threshold').textContent = data.threshold.toFixed(1);
+            }
+            
+            // Update last update time
+            document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+        }
+
+        // Listen for database changes
+        function setupFirebaseListeners() {
+            // Temperature listener
+            database.ref('/sensor_data/temperature').on('value', (snapshot) => {
+                const temp = snapshot.val();
+                if (temp !== null) {
+                    updateDisplay({ temperature: temp });
+                }
+            });
+
+            // Water level listener
+            database.ref('/sensor_data/water_level').on('value', (snapshot) => {
+                const waterLevel = snapshot.val();
+                if (waterLevel !== null) {
+                    updateDisplay({ water_level: waterLevel });
+                }
+            });
+
+            // Threshold listener
+            database.ref('/sensor_data/threshold').on('value', (snapshot) => {
+                const threshold = snapshot.val();
+                if (threshold !== null) {
+                    updateDisplay({ threshold: threshold });
+                }
+            });
+
+            // Connection state listener
+            database.ref('.info/connected').on('value', (snapshot) => {
+                setConnectionStatus(snapshot.val() === true);
+            });
+        }
+
+        // Initialize the app
+        function initApp() {
+            setupFirebaseListeners();
+            
+            // Initial data fetch
+            database.ref('/sensor_data').once('value').then((snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    updateDisplay(data);
+                }
+            });
+        }
+
+        // Start the app when the page loads
+        window.addEventListener('load', initApp);
+    </script>
+</body>
+</html>
