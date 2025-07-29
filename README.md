@@ -1,79 +1,96 @@
 # GEYSER-MONITORING-SYSTEM
 
-A real-time IoT-based geyser monitoring system using STM32 and ESP32 that measures water level and temperature, and updates data to Firebase for remote visualization.
+Conventional geysers lack automatic safety mechanisms.  
+Risks include dry run damage, overheating, and energy waste.  
+This project introduces a smart system using STM32, P43 sensor, and DS18B20.  
+Web dashboard via Firebase enables remote alerts and monitoring.
 
 ---
 
 ## Features
 
-- Real-time temperature monitoring from DS18B20 sensor
-- Dry-run protection via P43 water level sensor
-- Data transmission from STM32 to ESP32 over UART
-- Live dashboard using Firebase Realtime Database
-- Automatic alerts for over-threshold temperature or no water
-- Fully responsive web UI for monitoring
+- Prevent dry run operation using P43 water level sensor
+- Real-time temperature monitoring with DS18B20
+- Simulate geyser ON/OFF using LED and relay module
+- Threshold-based automatic control logic using STM32
+- UART communication between STM32 and ESP32
+- Live data pushed to Firebase and displayed on dashboard
+- Fully responsive and synced UI built with HTML and Firebase
 
 ---
 
 ## Components Used
 
-- STM32F103C8T6 (Blue Pill)
-- ESP32 Dev Module
-- DS18B20 Temperature Sensor
-- P43 Water Level Sensor
-- Resistors, connecting wires, breadboard
-- USB to TTL converter (for STM32 programming)
-- Power supply module
+- Microcontroller: STM32F4 (STM32F103C8T6)
+- Sensors:  
+  - P43 (water level – digital GPIO)  
+  - DS18B20 (temperature – 1-Wire)
+- Output:  
+  - LED (simulated geyser)  
+  - Relay Module (controls geyser simulation)
+- Communication:  
+  - UART (STM32 ↔ ESP32)  
+  - Wi-Fi / HTTP (ESP32 ↔ Firebase)
+- Software:  
+  - VS Code (Embedded C – HAL)  
+  - Firebase Realtime Database  
+  - HTML + JS for Dashboard UI
 
 ---
 
 ## Connections
 
-| STM32 Pin | Connected To                |
-|-----------|-----------------------------|
-| PA9       | ESP32 RX (GPIO16)           |
-| PA10      | ESP32 TX (GPIO17)           |
-| PA1       | DS18B20 Data                |
-| GND       | DS18B20 GND, P43 GND        |
-| 3.3V      | DS18B20 VCC, P43 VCC        |
-| PB0       | P43 Digital Output          |
-
-| ESP32 Pin | Connected To                |
-|-----------|-----------------------------|
-| GPIO16    | STM32 TX (PA9)              |
-| GPIO17    | STM32 RX (PA10)             |
-| 3.3V      | Firebase + Sensor Power     |
-| GND       | Common Ground               |
+| Component          | Connection                              |
+|--------------------|------------------------------------------|
+| P43 Sensor         | PB0 (STM32 GPIO – Digital Input)         |
+| DS18B20 Sensor     | PA1 (STM32 – 1-Wire Input)               |
+| LED (Simulated ON) | STM32 GPIO Output + Relay Driver         |
+| STM32 TX (PA9)     | ESP32 RX (GPIO16)                        |
+| STM32 RX (PA10)    | ESP32 TX (GPIO17)                        |
+| 3.3V, GND          | Shared between STM32, sensors, ESP32     |
 
 ---
 
 ## Tools & Libraries
 
-- STM32CubeIDE (STM32 code development)
-- Arduino IDE (ESP32 code)
+- STM32CubeIDE or VS Code (Embedded C – STM32 HAL)
+- Arduino IDE (ESP32 Wi-Fi Firebase code)
 - FirebaseESP32 library
-- DS18B20 OneWire library
-- PlatformIO (optional)
+- OneWire & DallasTemperature libraries
 - Firebase Realtime Database
-- Web-based HTML + CSS + JS Dashboard
+- HTML + CSS + JS for dashboard
+- Chrome for UI visualization
 
 ---
 
 ## Methodology
 
-1. STM32 reads sensor data:
-   - DS18B20 provides temperature
-   - P43 indicates water presence
-2. STM32 sends data over UART to ESP32
-3. ESP32 receives data and pushes to Firebase
-4. Web dashboard fetches and displays live data
-5. Alerts are shown based on threshold logic
+**Sensor Integration**  
+- Connect P43 to detect water presence  
+- Connect DS18B20 for temperature monitoring
+
+**Signal Processing**  
+- Use STM32 to read sensor values via GPIO and 1-Wire  
+
+**Control Logic Implementation**  
+- If water level is low, geyser stays OFF (relay + LED)  
+- If temperature exceeds threshold, geyser turns OFF
+
+**Simulation Output**  
+- LED and relay module indicate ON/OFF state of geyser  
+
+**Testing & Validation**  
+- Verified system response to various water/temp conditions
+
+**Communication Flow**  
+- P43 → STM32 (Digital GPIO)  
+- DS18B20 → STM32 (1-Wire protocol)  
+- STM32 → ESP32 (UART)  
+- ESP32 → Firebase (Wi-Fi / HTTP)
 
 ---
 
 ## Firebase Configuration
-
-**ESP32 Code Setup:**
 
 ```cpp
 #define FIREBASE_HOST "geysersystem-default-rtdb.asia-southeast1.firebasedatabase.app"
